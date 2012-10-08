@@ -6,7 +6,7 @@ import (
   "image/color"
   "os"
   "testing"
-  _ "tga" // should be the first one, because TGA doesn't have any constant "header"
+  _ "github.com/ftrvxmtrx/tga" // should be the first one, because TGA doesn't have any constant "header"
 
   _ "image/png"
 )
