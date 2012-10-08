@@ -281,6 +281,13 @@ func (tga *tga) getHeader() (err error) {
   tga.height = int(tga.raw.Height)
   tga.pixelSize = int(tga.raw.BPP) >> 3
 
+  // default is NOT premultiplied alpha model
+  tga.ColorModel = color.NRGBAModel
+
+  if err = tga.applyExtensions(); err != nil {
+    return
+  }
+
   var formatIsInvalid bool
 
   switch tga.raw.ImageType {
@@ -304,13 +311,8 @@ func (tga *tga) getHeader() (err error) {
     err = errors.New("invalid or unsupported image type")
   }
 
-  // default is NOT premultiplied alpha model
-  tga.ColorModel = color.NRGBAModel
-
-  if formatIsInvalid {
+  if err == nil && formatIsInvalid {
     err = errors.New("invalid image format")
-  } else if err == nil {
-    err = tga.applyExtensions()
   }
 
   return
