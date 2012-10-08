@@ -12,32 +12,31 @@ import (
 )
 
 type tgaTest struct {
-  golden   string
-  source   string
-  maxDelta int
+  golden string
+  source string
 }
 
 var tgaTests = []tgaTest{
-  {"bw.png", "cbw8.tga", 0},
-  {"bw.png", "ubw8.tga", 0},
-  {"color.png", "ctc32.tga", 0},
-  {"color.png", "ctc24.tga", 0},
-  {"color.png", "ctc16.tga", 0},
-  {"color.png", "ccm8.tga", 0},
-  {"color.png", "ucm8.tga", 0},
-  {"color.png", "utc32.tga", 0},
-  {"color.png", "utc24.tga", 0},
-  {"color.png", "utc16.tga", 0},
-  {"monochrome16.png", "monochrome16_top_left_rle.tga", 0},
-  {"monochrome16.png", "monochrome16_top_left.tga", 0},
-  {"monochrome8.png", "monochrome8_bottom_left_rle.tga", 0},
-  {"monochrome8.png", "monochrome8_bottom_left.tga", 0},
-  {"rgb24.png", "rgb24_bottom_left_rle.tga", 2<<8 + 2},
-  {"rgb24.png", "rgb24_top_left_colormap.tga", 0},
-  {"rgb24.png", "rgb24_top_left.tga", 2<<8 + 2},
-  {"rgb32.0.png", "rgb32_bottom_left.tga", 0},
-  {"rgb32.1.png", "rgb32_top_left_rle_colormap.tga", 0},
-  {"rgb32.0.png", "rgb32_top_left_rle.tga", 0},
+  {"bw.png", "cbw8.tga"},
+  {"bw.png", "ubw8.tga"},
+  {"color.png", "ctc32.tga"},
+  {"color.png", "ctc24.tga"},
+  {"color.png", "ctc16.tga"},
+  {"color.png", "ccm8.tga"},
+  {"color.png", "ucm8.tga"},
+  {"color.png", "utc32.tga"},
+  {"color.png", "utc24.tga"},
+  {"color.png", "utc16.tga"},
+  {"monochrome16.png", "monochrome16_top_left_rle.tga"},
+  {"monochrome16.png", "monochrome16_top_left.tga"},
+  {"monochrome8.png", "monochrome8_bottom_left_rle.tga"},
+  {"monochrome8.png", "monochrome8_bottom_left.tga"},
+  {"rgb24.0.png", "rgb24_bottom_left_rle.tga"},
+  {"rgb24.1.png", "rgb24_top_left_colormap.tga"},
+  {"rgb24.0.png", "rgb24_top_left.tga"},
+  {"rgb32.0.png", "rgb32_bottom_left.tga"},
+  {"rgb32.1.png", "rgb32_top_left_rle_colormap.tga"},
+  {"rgb32.0.png", "rgb32_top_left_rle.tga"},
 }
 
 func decode(filename string) (image.Image, string, error) {
@@ -60,7 +59,7 @@ func delta(a, b uint32) int {
   return int(a) - int(b)
 }
 
-func equal(c0, c1 color.Color, maxDelta int) bool {
+func equal(c0, c1 color.Color) bool {
   r0, g0, b0, a0 := c0.RGBA()
   r1, g1, b1, a1 := c1.RGBA()
 
@@ -68,12 +67,7 @@ func equal(c0, c1 color.Color, maxDelta int) bool {
     return true
   }
 
-  d0 := delta(r0, r1)
-  d1 := delta(g0, g1)
-  d2 := delta(b0, b1)
-  d3 := delta(a0, a1)
-
-  return d0 <= maxDelta && d1 <= maxDelta && d2 <= maxDelta && d3 <= maxDelta
+  return r0 == r1 && g0 == g1 && b0 == b1 && a0 == a1
 }
 
 func TestDecode(t *testing.T) {
@@ -93,7 +87,7 @@ loop:
 
       for x := gb.Min.X; x < gb.Max.X; x++ {
         for y := gb.Min.Y; y < gb.Max.Y; y++ {
-          if !equal(golden.At(x, y), source.At(x, y), test.maxDelta) {
+          if !equal(golden.At(x, y), source.At(x, y)) {
             t.Errorf("%s: (%d, %d) -- expected %v, got %v", test.source, x, y, golden.At(x, y), source.At(x, y))
             continue loop
           }
