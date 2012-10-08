@@ -41,10 +41,8 @@ type tga struct {
   palette       []byte
   paletteLength int
   ColorModel    color.Model
-  outPixelSize  int
   tmp           [4]byte
   decode        func(tga *tga, out []byte) (err error)
-  flip          func(tga *tga, out []byte)
 }
 
 const (
@@ -103,28 +101,20 @@ func decode(r io.Reader) (outImage image.Image, err error) {
   }
 
   var pixels []byte
-  rect := image.Rect(0, 0, tga.width, tga.height)
 
   // choose a right color model
-  switch tga.ColorModel {
-  case color.NRGBAModel:
-    im := image.NewNRGBA(rect)
+  if tga.ColorModel == color.NRGBAModel {
+    im := image.NewNRGBA(image.Rect(0, 0, tga.width, tga.height))
     outImage = im
     pixels = im.Pix
-
-  case color.RGBAModel:
-    im := image.NewRGBA(rect)
-    outImage = im
-    pixels = im.Pix
-
-  case color.GrayModel:
-    im := image.NewGray(rect)
+  } else {
+    im := image.NewRGBA(image.Rect(0, 0, tga.width, tga.height))
     outImage = im
     pixels = im.Pix
   }
 
   if err = tga.decode(&tga, pixels); err == nil {
-    tga.flip(&tga, pixels)
+    tga.flip(pixels)
   }
 
   return
@@ -192,7 +182,7 @@ func (tga *tga) applyExtensions() (err error) {
 
 // decodeRaw decodes a raw (uncompressed) data.
 func decodeRaw(tga *tga, out []byte) (err error) {
-  for i := 0; i < len(out) && err == nil; i += tga.outPixelSize {
+  for i := 0; i < len(out) && err == nil; i += 4 {
     err = tga.getPixel(out[i:])
   }
 
@@ -201,7 +191,7 @@ func decodeRaw(tga *tga, out []byte) (err error) {
 
 // decodeRLE decodes run-length encoded data.
 func decodeRLE(tga *tga, out []byte) (err error) {
-  size := tga.width * tga.height * tga.outPixelSize
+  size := tga.width * tga.height * 4
 
   for i := 0; i < size && err == nil; {
     var b byte
@@ -218,15 +208,15 @@ func decodeRLE(tga *tga, out []byte) (err error) {
 
       if err = tga.getPixel(tga.tmp[:]); err == nil {
         for count++; count > 0 && i < size; count-- {
-          copy(out[i:], tga.tmp[:tga.outPixelSize])
-          i += tga.outPixelSize
+          copy(out[i:], tga.tmp[:])
+          i += 4
         }
       }
     } else {
       // raw packet
       for count++; count > 0 && i < size && err == nil; count-- {
         err = tga.getPixel(out[i:])
-        i += tga.outPixelSize
+        i += 4
       }
     }
   }
@@ -234,8 +224,8 @@ func decodeRLE(tga *tga, out []byte) (err error) {
   return
 }
 
-// flip32 flips pixels of image based on its origin.
-func flip32(tga *tga, out []byte) {
+// flip flips pixels of image based on its origin.
+func (tga *tga) flip(out []byte) {
   flipH := tga.raw.Flags&flagOriginRight != 0
   flipV := tga.raw.Flags&flagOriginTop == 0
   rowSize := tga.width * 4
@@ -258,31 +248,6 @@ func flip32(tga *tga, out []byte) {
         b := out[(tga.height-y-1)*rowSize+x*4:]
 
         a[0], a[1], a[2], a[3], b[0], b[1], b[2], b[3] = b[0], b[1], b[2], b[3], a[0], a[1], a[2], a[3]
-      }
-    }
-  }
-}
-
-// flip8 flips pixels of image based on its origin.
-func flip8(tga *tga, out []byte) {
-  flipH := tga.raw.Flags&flagOriginRight != 0
-  flipV := tga.raw.Flags&flagOriginTop == 0
-  rowSize := tga.width
-
-  if flipH {
-    for y := 0; y < tga.height; y++ {
-      for x, offset := 0, y*rowSize; x < tga.width/2; x++ {
-        ai, bi := offset+x, offset+(tga.width-x-1)
-        out[ai], out[bi] = out[bi], out[ai]
-      }
-    }
-  }
-
-  if flipV {
-    for y := 0; y < tga.height/2; y++ {
-      for x := 0; x < tga.width; x++ {
-        ai, bi := y*rowSize+x, (tga.height-y-1)*rowSize+x
-        out[ai], out[bi] = out[bi], out[ai]
       }
     }
   }
@@ -316,15 +281,6 @@ func (tga *tga) getHeader() (err error) {
   tga.height = int(tga.raw.Height)
   tga.pixelSize = int(tga.raw.BPP) >> 3
 
-  // default is NOT premultiplied alpha model
-  tga.ColorModel = color.NRGBAModel
-  tga.outPixelSize = 4
-  tga.flip = flip32
-
-  if err == nil {
-    err = tga.applyExtensions()
-  }
-
   var formatIsInvalid bool
 
   switch tga.raw.ImageType {
@@ -339,24 +295,22 @@ func (tga *tga) getHeader() (err error) {
     formatIsInvalid = (tga.raw.BPP != 32 &&
       tga.raw.BPP != 16 &&
       (tga.raw.BPP != 24 || tga.hasAlpha))
-    tga.ColorModel = color.NRGBAModel
 
   case imageTypeMonoChrome:
     formatIsInvalid = ((tga.hasAlpha && tga.raw.BPP != 16) ||
       (!tga.hasAlpha && tga.raw.BPP != 8))
 
-    if !tga.hasAlpha && tga.raw.BPP == 8 {
-      tga.ColorModel = color.GrayModel
-      tga.outPixelSize = 1
-      tga.flip = flip8
-    }
-
   default:
     err = errors.New("invalid or unsupported image type")
   }
 
+  // default is NOT premultiplied alpha model
+  tga.ColorModel = color.NRGBAModel
+
   if formatIsInvalid {
     err = errors.New("invalid image format")
+  } else if err == nil {
+    err = tga.applyExtensions()
   }
 
   return
@@ -422,8 +376,7 @@ func (tga *tga) getPixel(dst []byte) (err error) {
         B, G, R = wordToBGR(word)
       }
     } else {
-      dst[0] = src[0]
-      return
+      B, G, R = src[0], src[0], src[0]
     }
   }
 
