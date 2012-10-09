@@ -253,7 +253,7 @@ func (tga *tga) getHeader() (err error) {
 
   switch tga.raw.ImageType {
   case imageTypePaletted:
-    formatIsInvalid = (tga.raw.PaletteType == 0 ||
+    formatIsInvalid = (tga.raw.PaletteType != 1 ||
       tga.raw.BPP != 8 ||
       tga.raw.PaletteFirst >= tga.raw.PaletteLength ||
       (tga.raw.PaletteBPP != 15 && tga.raw.PaletteBPP != 16 && tga.raw.PaletteBPP != 24 && tga.raw.PaletteBPP != 32))
