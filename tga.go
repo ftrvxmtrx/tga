@@ -8,7 +8,7 @@ type rawHeader struct {
   PaletteLength uint16
   PaletteBPP    uint8
   OriginX       uint16
-  PriginY       uint16
+  OriginY       uint16
   Width         uint16
   Height        uint16
   BPP           uint8
