@@ -100,15 +100,16 @@ func decode(r io.Reader) (outImage image.Image, err error) {
     }
   }
 
+  rect := image.Rect(0, 0, tga.width, tga.height)
   var pixels []byte
 
   // choose a right color model
   if tga.ColorModel == color.NRGBAModel {
-    im := image.NewNRGBA(image.Rect(0, 0, tga.width, tga.height))
+    im := image.NewNRGBA(rect)
     outImage = im
     pixels = im.Pix
   } else {
-    im := image.NewRGBA(image.Rect(0, 0, tga.width, tga.height))
+    im := image.NewRGBA(rect)
     outImage = im
     pixels = im.Pix
   }
