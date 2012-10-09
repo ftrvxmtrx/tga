@@ -9,27 +9,6 @@ import (
   "io"
 )
 
-type rawHeader struct {
-  IdLength      uint8
-  PaletteType   uint8
-  ImageType     uint8
-  PaletteFirst  uint16
-  PaletteLength uint16
-  PaletteBPP    uint8
-  OriginX       uint16
-  PriginY       uint16
-  Width         uint16
-  Height        uint16
-  BPP           uint8
-  Flags         uint8
-}
-
-type rawFooter struct {
-  ExtAreaOffset uint32
-  DevDirOffset  uint32
-  Signature     [18]byte // tgaSignature
-}
-
 type tga struct {
   r             *bytes.Reader
   raw           rawHeader
@@ -44,26 +23,6 @@ type tga struct {
   tmp           [4]byte
   decode        func(tga *tga, out []byte) (err error)
 }
-
-const (
-  flagOriginRight = uint8(1 << 4)
-  flagOriginTop   = 1 << 5
-  flagMask        = 7
-)
-
-const (
-  imageTypePaletted   = uint8(1)
-  imageTypeTrueColor  = 2
-  imageTypeMonoChrome = 3
-  imageTypeRLE        = 1 << 3
-  imageTypeMask       = 3
-)
-
-const (
-  tgaRawHeaderSize = 18
-  tgaRawFooterSize = 26
-  tgaSignature     = "TRUEVISION-XFILE.\x00"
-)
 
 // Decode decodes a TARGA image.
 func Decode(r io.Reader) (outImage image.Image, err error) {
@@ -157,7 +116,7 @@ func (tga *tga) applyExtensions() (err error) {
   } else if err = binary.Read(tga.r, binary.LittleEndian, &rawFooter); err != nil {
     return
   } else if bytes.Equal(rawFooter.Signature[:], []byte(tgaSignature)) && rawFooter.ExtAreaOffset != 0 {
-    offset := int64(rawFooter.ExtAreaOffset + 0x1ee)
+    offset := int64(rawFooter.ExtAreaOffset + extAreaAttrTypeOffset)
 
     var n int64
     var t byte
@@ -169,7 +128,6 @@ func (tga *tga) applyExtensions() (err error) {
     } else if t == 3 {
       // alpha
       tga.hasAlpha = true
-      tga.ColorModel = color.NRGBAModel
     } else if t == 4 {
       // premultiplied alpha
       tga.hasAlpha = true
