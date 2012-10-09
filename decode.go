@@ -65,7 +65,8 @@ const (
   tgaSignature     = "TRUEVISION-XFILE.\x00"
 )
 
-func decode(r io.Reader) (outImage image.Image, err error) {
+// Decode decodes a TARGA image.
+func Decode(r io.Reader) (outImage image.Image, err error) {
   var tga tga
   var data bytes.Buffer
 
@@ -121,7 +122,8 @@ func decode(r io.Reader) (outImage image.Image, err error) {
   return
 }
 
-func decodeConfig(r io.Reader) (cfg image.Config, err error) {
+// DecodeConfig decodes a header of TARGA image and returns its configuration.
+func DecodeConfig(r io.Reader) (cfg image.Config, err error) {
   var tga tga
   var data bytes.Buffer
 
@@ -143,7 +145,7 @@ func decodeConfig(r io.Reader) (cfg image.Config, err error) {
 }
 
 func init() {
-  image.RegisterFormat("tga", "", decode, decodeConfig)
+  image.RegisterFormat("tga", "", Decode, DecodeConfig)
 }
 
 // applyExtensions reads extensions section (if it exists) and parses attribute type.
