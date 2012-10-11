@@ -8,6 +8,7 @@ import (
   "io"
 )
 
+// Encode encodes an image into TARGA format.
 func Encode(w io.Writer, m image.Image) (err error) {
   b := m.Bounds()
   mw, mh := b.Dx(), b.Dy()
