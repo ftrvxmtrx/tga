@@ -8,7 +8,8 @@ monochrome, truecolor and colormapped images. It also correctly handles origins,
 attribute type in extensions area and successfully passes TGA 2.0 conformance
 suite (http://googlesites.inequation.org/tgautilities).
 
-Encoding is not done yet.
+Encoding an image doesn't involve conversion if it's `image.Gray`, `image.RGBA`
+or `image.NRGBA`. Other types are converted to `image.NRGBA` prior to encoding.
 
 ## Build status
 
