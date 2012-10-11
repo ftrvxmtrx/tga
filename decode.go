@@ -220,7 +220,7 @@ func (tga *tga) getHeader() (err error) {
     return
   }
 
-  if tga.raw.ImageType&imageTypeRLE != 0 {
+  if tga.raw.ImageType&imageTypeFlagRLE != 0 {
     tga.decode = decodeRLE
   } else {
     tga.decode = decodeRaw

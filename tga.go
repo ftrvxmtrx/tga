@@ -22,17 +22,17 @@ type rawFooter struct {
 }
 
 const (
-  flagOriginRight   = uint8(1 << 4)
+  flagOriginRight   = 1 << 4
   flagOriginTop     = 1 << 5
   flagAlphaSizeMask = 0x0f
 )
 
 const (
-  imageTypePaletted   = uint8(1)
+  imageTypePaletted   = 1
   imageTypeTrueColor  = 2
   imageTypeMonoChrome = 3
-  imageTypeRLE        = 1 << 3
   imageTypeMask       = 3
+  imageTypeFlagRLE    = 1 << 3
 )
 
 const (
