@@ -1,11 +1,11 @@
 package tga_test
 
 import (
+  "github.com/ftrvxmtrx/tga"
   "image"
   "image/draw"
   "os"
   "testing"
-  "tga"
 )
 
 func encode(m image.Image) (filename string, err error) {
