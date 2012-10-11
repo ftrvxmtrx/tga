@@ -115,7 +115,7 @@ func (tga *tga) applyExtensions() (err error) {
     return
   } else if err = binary.Read(tga.r, binary.LittleEndian, &rawFooter); err != nil {
     return
-  } else if bytes.Equal(rawFooter.Signature[:], []byte(tgaSignature)) && rawFooter.ExtAreaOffset != 0 {
+  } else if bytes.Equal(rawFooter.Signature[:], tgaSignature[:]) && rawFooter.ExtAreaOffset != 0 {
     offset := int64(rawFooter.ExtAreaOffset + extAreaAttrTypeOffset)
 
     var n int64
@@ -125,10 +125,10 @@ func (tga *tga) applyExtensions() (err error) {
       return
     } else if t, err = tga.r.ReadByte(); err != nil {
       return
-    } else if t == 3 {
+    } else if t == attrTypeAlpha {
       // alpha
       tga.hasAlpha = true
-    } else if t == 4 {
+    } else if t == attrTypePremultipliedAlpha {
       // premultiplied alpha
       tga.hasAlpha = true
       tga.ColorModel = color.RGBAModel
@@ -227,14 +227,14 @@ func (tga *tga) getHeader() (err error) {
   }
 
   tga.raw.ImageType &= imageTypeMask
-  flags := tga.raw.Flags & flagMask
+  alphaSize := tga.raw.Flags & flagAlphaSizeMask
 
-  if flags != 0 && flags != 1 && flags != 8 {
+  if alphaSize != 0 && alphaSize != 1 && alphaSize != 8 {
     err = errors.New("invalid alpha size")
     return
   }
 
-  tga.hasAlpha = ((flags != 0 || tga.raw.BPP == 32) ||
+  tga.hasAlpha = ((alphaSize != 0 || tga.raw.BPP == 32) ||
     (tga.raw.ImageType == imageTypeMonoChrome && tga.raw.BPP == 16) ||
     (tga.raw.ImageType == imageTypePaletted && tga.raw.PaletteBPP == 32))
 

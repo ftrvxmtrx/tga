@@ -22,9 +22,9 @@ type rawFooter struct {
 }
 
 const (
-  flagOriginRight = uint8(1 << 4)
-  flagOriginTop   = 1 << 5
-  flagMask        = 7
+  flagOriginRight   = uint8(1 << 4)
+  flagOriginTop     = 1 << 5
+  flagAlphaSizeMask = 0x0f
 )
 
 const (
@@ -38,12 +38,31 @@ const (
 const (
   tgaRawHeaderSize = 18
   tgaRawFooterSize = 26
-  tgaSignature     = "TRUEVISION-XFILE.\x00"
 )
 
 const (
   extAreaAttrTypeOffset = 0x1ee
 )
+
+const (
+  attrTypeAlpha              = 3
+  attrTypePremultipliedAlpha = 4
+)
+
+var tgaSignature = []byte("TRUEVISION-XFILE.\x00")
+
+func newFooter() *rawFooter {
+  f := &rawFooter{}
+  copy(f.Signature[:], tgaSignature)
+  return f
+}
+
+func newExtArea(attrType byte) []byte {
+  area := make([]byte, extAreaAttrTypeOffset+1)
+  area[0], area[1] = 0xef, 0x01 // size
+  area[extAreaAttrTypeOffset] = attrType
+  return area
+}
 
 // Local Variables:
 // indent-tabs-mode: nil
