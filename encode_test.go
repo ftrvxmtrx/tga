@@ -8,11 +8,12 @@ import (
   "testing"
 )
 
-func encode(m image.Image) (filename string, err error) {
-  filename = "encode_test.tga"
+const dstFilename = "encode_test.tga"
+
+func encode(m image.Image) (err error) {
   var f *os.File
 
-  if f, err = os.Create("testdata/" + filename); err != nil {
+  if f, err = os.Create("testdata/" + dstFilename); err != nil {
     return
   }
 
@@ -38,39 +39,39 @@ func testImagesEqual(filename string, expected, got image.Image, t *testing.T) b
 }
 
 func TestEncode(t *testing.T) {
-  var dst string
+  defer os.Remove("testdata/" + dstFilename)
 
 loop:
 
   for _, test := range tgaTests {
     typ := "normal"
 
-    if source, _, err := decode(test.source); err != nil {
+    if m, _, err := decode(test.source); err != nil {
       t.Errorf("%s: %v", test.source, err)
-    } else if dst, err = encode(source); err != nil {
+    } else if err = encode(m); err != nil {
       t.Errorf("%s: encode failed (%v)", test.source, err)
-    } else if second, _, err := decode(dst); err != nil {
-      t.Errorf("%s: %v", dst, err)
-    } else if testImagesEqual(test.source, source, second, t) {
+    } else if second, _, err := decode(dstFilename); err != nil {
+      t.Errorf("%s: %v", dstFilename, err)
+    } else if testImagesEqual(test.source, m, second, t) {
       // test monochrome
       b := second.Bounds()
       gray := image.NewGray(b)
       draw.Draw(gray, b, second, b.Min, draw.Src)
       typ = "gray"
 
-      if dst, err = encode(gray); err != nil {
+      if err = encode(gray); err != nil {
         t.Errorf("%s: encode to gray failed (%v)", test.source, err)
-      } else if third, _, err := decode(dst); err != nil {
-        t.Errorf("%s: gray decode failed (%v)", dst, err)
+      } else if third, _, err := decode(dstFilename); err != nil {
+        t.Errorf("%s: gray decode failed (%v)", dstFilename, err)
       } else if testImagesEqual(test.source, gray, third, t) {
         premultiplied := image.NewRGBA(b)
         draw.Draw(premultiplied, b, second, b.Min, draw.Src)
         typ = "premultiplied"
 
-        if dst, err = encode(premultiplied); err != nil {
+        if err = encode(premultiplied); err != nil {
           t.Errorf("%s: encode to premultiplied failed (%v)", test.source, err)
-        } else if fourth, _, err := decode(dst); err != nil {
-          t.Errorf("%s: premultiplied decode failed (%v)", dst, err)
+        } else if fourth, _, err := decode(dstFilename); err != nil {
+          t.Errorf("%s: premultiplied decode failed (%v)", dstFilename, err)
         } else if testImagesEqual(test.source, premultiplied, fourth, t) {
           continue loop
         } else {
@@ -79,10 +80,8 @@ loop:
       }
     }
 
-    t.Errorf("%s: encoded %s image (%s) is different", test.source, typ, dst)
+    t.Errorf("%s: encoded %s image (%s) is different", test.source, typ, dstFilename)
   }
-
-  os.Remove("testdata/" + dst)
 }
 
 // Local Variables:
