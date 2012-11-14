@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"image"
 	"image/color"
 	"io"
@@ -23,6 +24,12 @@ type tga struct {
 	tmp           [4]byte
 	decode        func(tga *tga, out []byte) (err error)
 }
+
+var (
+	ErrAlphaSize    = errors.New("tga: invalid alpha size")
+	ErrFormat       = errors.New("tga: invalid format")
+	ErrPaletteIndex = errors.New("tga: palette index out of range")
+)
 
 // Decode decodes a TARGA image.
 func Decode(r io.Reader) (outImage image.Image, err error) {
@@ -230,7 +237,7 @@ func (tga *tga) getHeader() (err error) {
 	alphaSize := tga.raw.Flags & flagAlphaSizeMask
 
 	if alphaSize != 0 && alphaSize != 1 && alphaSize != 8 {
-		err = errors.New("invalid alpha size")
+		err = ErrAlphaSize
 		return
 	}
 
@@ -269,11 +276,11 @@ func (tga *tga) getHeader() (err error) {
 			(!tga.hasAlpha && tga.raw.BPP != 8))
 
 	default:
-		err = errors.New("invalid or unsupported image type")
+		err = fmt.Errorf("tga: unknown image type %d", tga.raw.ImageType)
 	}
 
 	if err == nil && formatIsInvalid {
-		err = errors.New("invalid image format")
+		err = ErrFormat
 	}
 
 	return
@@ -318,7 +325,7 @@ func (tga *tga) getPixel(dst []byte) (err error) {
 			index := int(src[0])
 
 			if int(index) >= tga.paletteLength {
-				return errors.New("palette index out of range")
+				return ErrPaletteIndex
 			}
 
 			var m int
