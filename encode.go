@@ -39,6 +39,7 @@ func Encode(w io.Writer, m image.Image) (err error) {
 
 	default:
 		// convert to non-premultiplied alpha by default
+		h.ImageType = imageTypeTrueColor
 		newm := image.NewNRGBA(b)
 		draw.Draw(newm, b, m, b.Min, draw.Src)
 		err = encodeRGBA(w, newm, h, attrTypeAlpha)
