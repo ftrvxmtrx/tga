@@ -11,19 +11,13 @@ suite (http://googlesites.inequation.org/tgautilities).
 Encoding an image doesn't involve conversion if it's `image.Gray`, `image.RGBA`
 or `image.NRGBA`. Other types are converted to `image.NRGBA` prior to encoding.
 
-## Build status
-
-<a href="http://goci.me/project/github.com/ftrvxmtrx/tga">
-<img src="http://goci.me/project/image/github.com/ftrvxmtrx/tga" />
-</a>
-
 ## Installation
 
     $ go get github.com/ftrvxmtrx/tga
 
 ## Documentation and examples
 
-[tga on go.pkgdoc.org](http://go.pkgdoc.org/github.com/ftrvxmtrx/tga)
+[tga on godoc.org](http://godoc.org/github.com/ftrvxmtrx/tga)
 
 ## License
 
